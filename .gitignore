@@ -1,0 +1,33 @@
+# compiled output
+/dist
+/node_modules
+/build
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# env
+.env
+.env.*
+!.env.example
+
+# testing
+/coverage
+
+# misc
+*.tsbuildinfo
