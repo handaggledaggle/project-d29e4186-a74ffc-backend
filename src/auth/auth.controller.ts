@@ -21,11 +21,17 @@ export class AuthController {
         throw new HttpException('Password must be at least 6 characters', HttpStatus.BAD_REQUEST);
       }
 
+      // Ensure we pass displayName in the property name expected by UsersService.create
       const user = await this.authService.register(body.email, body.password, displayName);
       return { user_id: user.id, email: user.email, created_at: user.createdAt };
     } catch (err: any) {
-      if (err.message === 'EMAIL_EXISTS') throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+      // Normalize known error shapes (string / Error)
+      const msg = err?.message ?? err;
+      if (msg === 'EMAIL_EXISTS' || msg === 'Email already exists') throw new HttpException('Email already exists', HttpStatus.CONFLICT);
       if (err instanceof HttpException) throw err;
+      // Log to console for easier debugging in production runtime (kept minimal)
+      // eslint-disable-next-line no-console
+      console.error('Register error:', err);
       throw new HttpException('Internal error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

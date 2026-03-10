@@ -11,7 +11,8 @@ export class UsersService {
     const user = this.repo.create({
       email: payload.email,
       password: payload.password,
-      displayName: payload.displayName,
+      // Accept either displayName or display_name from payload and normalize to displayName
+      displayName: (payload as any).displayName ?? (payload as any).display_name ?? null,
       roles: payload.roles || 'USER',
     } as Partial<User>);
     return this.repo.save(user);
