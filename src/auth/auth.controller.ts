@@ -12,10 +12,20 @@ export class AuthController {
     try {
       // Support both display_name (from frontend) and displayName (internal)
       const displayName = (body as any).display_name ?? (body as any).displayName;
+
+      // Basic validation to provide clearer errors to frontend
+      if (!body.email || typeof body.email !== 'string') {
+        throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+      }
+      if (!body.password || typeof body.password !== 'string' || body.password.length < 6) {
+        throw new HttpException('Password must be at least 6 characters', HttpStatus.BAD_REQUEST);
+      }
+
       const user = await this.authService.register(body.email, body.password, displayName);
       return { user_id: user.id, email: user.email, created_at: user.createdAt };
     } catch (err: any) {
       if (err.message === 'EMAIL_EXISTS') throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+      if (err instanceof HttpException) throw err;
       throw new HttpException('Internal error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
