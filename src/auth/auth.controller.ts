@@ -10,7 +10,9 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: RegisterDto) {
     try {
-      const user = await this.authService.register(body.email, body.password, body.display_name);
+      // Support both display_name (from frontend) and displayName (internal)
+      const displayName = (body as any).display_name ?? (body as any).displayName;
+      const user = await this.authService.register(body.email, body.password, displayName);
       return { user_id: user.id, email: user.email, created_at: user.createdAt };
     } catch (err: any) {
       if (err.message === 'EMAIL_EXISTS') throw new HttpException('Email already exists', HttpStatus.CONFLICT);
