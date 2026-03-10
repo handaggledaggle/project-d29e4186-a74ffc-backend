@@ -38,8 +38,19 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto) {
+    // Validate incoming body to avoid undefined values causing silent failures
+    if (!body || typeof body.email !== 'string' || typeof body.password !== 'string') {
+      throw new HttpException('Email and password are required', HttpStatus.BAD_REQUEST);
+    }
+
     const tokens = await this.authService.login(body.email, body.password);
     if (!tokens) throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    return tokens;
+
+    // Return tokens in a consistent, JSON-friendly shape expected by frontend
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_in: tokens.expires_in,
+    };
   }
 }
