@@ -3,7 +3,8 @@
   "scripts": {
     "build": "nest build",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "start": "node dist/main"
   },
   "version": "1.0.0",
   "dependencies": {
