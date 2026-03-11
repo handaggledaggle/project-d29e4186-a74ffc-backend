@@ -1,126 +1,105 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-type ArtworkForm = {
-  title: string;
-  description: string;
-  price: string;
-  category: string;
-  tags: string;
-  // For simplicity, files will be an array of objects with original_url
-  files: { original_url: string }[];
-};
+type Props = {};
 
-export default function ArtworkCreateClient() {
-  const [form, setForm] = useState<ArtworkForm>({
-    title: '',
-    description: '',
-    price: '',
-    category: '',
-    tags: '',
-    files: [],
-  });
+export default function ArtworkCreateClient(_: Props) {
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('0');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((s) => ({ ...s, [name]: value } as ArtworkForm));
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    // For demo, we will create object URLs and send them as original_url.
-    const arr: { original_url: string }[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      // In production you'd upload to storage and get real URLs.
-      const url = URL.createObjectURL(file);
-      arr.push({ original_url: url });
-    }
-    setForm((s) => ({ ...s, files: arr }));
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage(null);
+    setError(null);
     setLoading(true);
     try {
-      const payload = {
-        title: form.title,
-        description: form.description,
-        price: Number(form.price),
-        category: form.category || undefined,
-        tags: form.tags ? form.tags.split(',').map((t) => t.trim()) : undefined,
-        files: form.files,
-      } as any;
+      const body = {
+        title,
+        description,
+        price: Number(price),
+      };
 
-      const token = localStorage.getItem('access_token');
-      const res = await fetch('https://backend-production-cdc4.up.railway.app/api/v1/artworks', {
+      const res = await fetch('/api/v1/artworks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`${res.status} ${text}`);
+        // try to extract message
+        let msg = res.statusText;
+        try {
+          const json = await res.json();
+          if (json && json.message) msg = json.message;
+        } catch (err) {
+          // ignore
+        }
+        throw new Error(msg || `Request failed with status ${res.status}`);
       }
+
       const data = await res.json();
-      setMessage(`Artwork created: ${data.artwork_id}`);
-      // reset form
-      setForm({ title: '', description: '', price: '', category: '', tags: '', files: [] });
+      // Navigate to created artwork page if id present, else refresh
+      if (data && data.artwork_id) {
+        router.push(`/artworks/${data.artwork_id}`);
+      } else {
+        router.refresh();
+      }
     } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
+      setError(err && err.message ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-      <label>
-        Title
-        <input name="title" value={form.title} onChange={onChange} required />
-      </label>
-
-      <label>
-        Description
-        <textarea name="description" value={form.description} onChange={onChange} />
-      </label>
-
-      <label>
-        Price
-        <input name="price" type="number" step="0.01" value={form.price} onChange={onChange} required />
-      </label>
-
-      <label>
-        Category
-        <input name="category" value={form.category} onChange={onChange} />
-      </label>
-
-      <label>
-        Tags (comma separated)
-        <input name="tags" value={form.tags} onChange={onChange} />
-      </label>
-
-      <label>
-        Files (images)
-        <input type="file" multiple accept="image/*" onChange={onFileChange} />
-      </label>
-
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Artwork'}
-        </button>
+        <label className="block text-sm font-medium">Title</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="mt-1 block w-full border px-2 py-1"
+          required
+        />
       </div>
 
-      {message && <div style={{ marginTop: 8 }}>{message}</div>}
+      <div>
+        <label className="block text-sm font-medium">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="mt-1 block w-full border px-2 py-1"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">Price</label>
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="mt-1 block w-full border px-2 py-1"
+          min="0"
+          required
+        />
+      </div>
+
+      {error && <div className="text-red-600">{error}</div>}
+
+      <div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          {loading ? 'Creating...' : '작품 등록하기'}
+        </button>
+      </div>
     </form>
   );
 }
