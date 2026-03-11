@@ -39,7 +39,7 @@ export class AuthService {
     const refreshToken = randomUUID();
     // store access token mapping
     this.tokenToUserId.set(accessToken, user.id);
-    // naive return
+    // expose token -> user mapping for guard to use (AuthGuard will call validateAccessToken)
     return { access_token: accessToken, refresh_token: refreshToken, expires_in: 3600 };
   }
 
