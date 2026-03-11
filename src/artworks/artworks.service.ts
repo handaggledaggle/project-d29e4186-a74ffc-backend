@@ -20,6 +20,7 @@ export class ArtworksService {
       price: payload.price,
       files: payload.files,
       owner,
+      status: payload.status || 'PUBLIC',
     });
     return this.repo.save(art);
   }

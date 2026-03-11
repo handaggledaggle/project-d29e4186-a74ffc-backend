@@ -47,7 +47,7 @@ export class ArtworksController {
   @UseGuards(AuthGuard)
   @Post()
   async create(@Req() req: any, @Body() body: any) {
-    // require SELLER role
+    // require SELLER role - currently AuthGuard only validates user id, role enforcement may be added later
     const user = req.user;
     // owner will be fetched by calling DB; for simplicity, owner object with id only
     const owner = { id: user.id } as any;
