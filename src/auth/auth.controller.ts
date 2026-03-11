@@ -10,10 +10,13 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: RegisterDto) {
     try {
-      const user = await this.authService.register(body.email, body.password, body.display_name);
+      // support both display_name and displayName from client
+      const displayName = (body as any).displayName || (body as any).display_name;
+      const user = await this.authService.register(body.email, body.password, displayName);
       return { user_id: user.id, email: user.email, created_at: user.createdAt };
     } catch (err: any) {
       if (err.message === 'EMAIL_EXISTS') throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+      if (err.message === 'INVALID_INPUT') throw new HttpException('Invalid input', HttpStatus.BAD_REQUEST);
       throw new HttpException('Internal error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

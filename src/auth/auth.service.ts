@@ -14,6 +14,11 @@ export class AuthService {
   }
 
   async register(email: string, password: string, displayName?: string) {
+    // Simple validation to avoid creating users with empty email/password
+    if (!email || !password) {
+      throw new Error('INVALID_INPUT');
+    }
+
     const existing = await this.usersService.findByEmail(email);
     if (existing) {
       throw new Error('EMAIL_EXISTS');
