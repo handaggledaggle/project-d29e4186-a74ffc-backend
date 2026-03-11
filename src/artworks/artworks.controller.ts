@@ -40,7 +40,9 @@ export class ArtworksController {
       const art = await this.service.create(owner, body);
       return { artwork_id: art.id, title: art.title, created_at: art.createdAt, files: art.files };
     } catch (err: any) {
-      if (err.message === 'VALIDATION') throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST);
+      // Handle both Error instances and other thrown values
+      const message = err && err.message ? err.message : String(err);
+      if (message === 'VALIDATION') throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST);
       throw new HttpException('Internal error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -52,7 +54,9 @@ export class ArtworksController {
       const updated = await this.service.update(id, req.user.id, body);
       return { artwork_id: updated.id, updated_at: updated.createdAt };
     } catch (err: any) {
-      if (err.message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      const message = err && err.message ? err.message : String(err);
+      if (message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      if (err instanceof Error && err.name === 'NotFoundException') throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
       throw new HttpException('Internal', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -64,7 +68,9 @@ export class ArtworksController {
       const art = await this.service.remove(id, req.user.id);
       return { artwork_id: art.id, status: art.status };
     } catch (err: any) {
-      if (err.message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      const message = err && err.message ? err.message : String(err);
+      if (message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      if (err instanceof Error && err.name === 'NotFoundException') throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
       throw new HttpException('Internal', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
