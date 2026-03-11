@@ -32,9 +32,8 @@ export class ArtworksController {
   @UseGuards(AuthGuard)
   @Post()
   async create(@Req() req: any, @Body() body: any) {
-    // require SELLER role
+    // require authentication
     const user = req.user;
-    // owner will be fetched by calling DB; for simplicity, owner object with id only
     const owner = { id: user.id } as any;
     try {
       const art = await this.service.create(owner, body);
