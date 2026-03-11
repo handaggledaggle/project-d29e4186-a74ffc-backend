@@ -15,7 +15,8 @@ export class AuthGuard implements CanActivate {
     const altHeader = (req.headers['x-access-token'] || req.headers['X-Access-Token']) as string | undefined;
 
     const header = authHeader || altHeader;
-    if (!header) throw new UnauthorizedException('No auth header');
+    // Provide a clearer Unauthorized message so frontend can surface it.
+    if (!header) throw new UnauthorizedException('Authorization header missing. Provide "Authorization: Bearer <token>" or "x-access-token: <token>"');
 
     // Support possible variations: "Bearer <token>" or just the token string
     const parts = String(header).split(' ');
@@ -26,11 +27,11 @@ export class AuthGuard implements CanActivate {
       // header contains token only
       token = parts[0];
     } else {
-      throw new UnauthorizedException('Malformed auth header');
+      throw new UnauthorizedException('Malformed Authorization header');
     }
 
     const userId = this.authService.validateAccessToken(token);
-    if (!userId) throw new UnauthorizedException('Invalid token');
+    if (!userId) throw new UnauthorizedException('Invalid or expired token');
     // attach userId to request for controllers/services
     (req as any).user = { id: userId };
     return true;
