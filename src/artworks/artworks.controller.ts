@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Req, Patch, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, Req, Patch, Delete, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ArtworksService } from './artworks.service';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('api/v1/artworks')
 export class ArtworksController {
+  private readonly logger = new Logger(ArtworksController.name);
   constructor(private service: ArtworksService) {}
 
   @Get()
@@ -57,7 +58,12 @@ export class ArtworksController {
     } catch (err: any) {
       // Handle both Error instances and other thrown values
       const message = err && err.message ? err.message : String(err);
-      if (message === 'VALIDATION') throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST);
+      // Provide more specific messages for common failures so frontend can show helpful text
+      if (message === 'VALIDATION') {
+        this.logger.warn(`Artwork create validation failed for user=${user?.id}, payload=${JSON.stringify(body)}`);
+        throw new HttpException('Validation failed: title and price are required', HttpStatus.BAD_REQUEST);
+      }
+      this.logger.error('Artwork create failed', err?.stack || err);
       throw new HttpException('Internal error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -70,8 +76,14 @@ export class ArtworksController {
       return { artwork_id: updated.id, updated_at: updated.createdAt };
     } catch (err: any) {
       const message = err && err.message ? err.message : String(err);
-      if (message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-      if (err instanceof Error && err.name === 'NotFoundException') throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+      if (message === 'FORBIDDEN') {
+        this.logger.warn(`Forbidden update attempt user=${req.user?.id} artwork=${id}`);
+        throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      }
+      if (err instanceof Error && err.name === 'NotFoundException') {
+        throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error('Artwork update failed', err?.stack || err);
       throw new HttpException('Internal', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -84,8 +96,14 @@ export class ArtworksController {
       return { artwork_id: art.id, status: art.status };
     } catch (err: any) {
       const message = err && err.message ? err.message : String(err);
-      if (message === 'FORBIDDEN') throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-      if (err instanceof Error && err.name === 'NotFoundException') throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+      if (message === 'FORBIDDEN') {
+        this.logger.warn(`Forbidden delete attempt user=${req.user?.id} artwork=${id}`);
+        throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      }
+      if (err instanceof Error && err.name === 'NotFoundException') {
+        throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+      }
+      this.logger.error('Artwork remove failed', err?.stack || err);
       throw new HttpException('Internal', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
