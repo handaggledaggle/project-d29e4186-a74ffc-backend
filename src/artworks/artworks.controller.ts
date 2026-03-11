@@ -8,7 +8,22 @@ export class ArtworksController {
 
   @Get()
   async list(@Query() query: any) {
-    return this.service.findList(query);
+    // Return a simplified list format suitable for feed pages
+    const result = await this.service.findList(query);
+    // map items to API shape consumed by frontend
+    const items = result.items.map((art) => ({
+      artwork_id: art.id,
+      title: art.title,
+      description: art.description,
+      tags: art.tags ? art.tags.split(',') : [],
+      category: art.category,
+      price: Number(art.price),
+      files: art.files,
+      seller: art.owner ? { id: art.owner.id, display_name: art.owner.displayName } : null,
+      status: art.status,
+      created_at: art.createdAt,
+    }));
+    return { items, total_count: result.total_count, page: result.page, page_size: result.page_size };
   }
 
   @Get(':id')
