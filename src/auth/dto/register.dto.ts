@@ -1,7 +1,5 @@
 export class RegisterDto {
-  email!: string;
-  password!: string;
-  // Accept both display_name (snake_case from frontend) and displayName (camelCase)
+  email: string;
+  password: string;
   display_name?: string;
-  displayName?: string;
 }

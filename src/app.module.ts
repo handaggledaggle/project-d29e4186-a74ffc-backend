@@ -17,11 +17,12 @@ import { AdminModule } from './admin/admin.module';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false, // WARN: keep false in production and use migrations
       ssl: {
         rejectUnauthorized: false,
       },
     }),
+    // Feature modules
     AuthModule,
     UsersModule,
     ArtworksModule,
